@@ -1,0 +1,235 @@
+---
+
+# Creating and configuring VPN server
+- hosts: "vpnserver"
+  gather_facts: True
+  become: True
+  tags: vpn-server
+  tasks:
+    - name: Get user HOME directory
+      command: echo $HOME
+      register: user_home_cmd
+      changed_when: False
+    - name: Define user home directory
+      set_fact:
+        user_home: "{{ user_home_cmd.stdout }}"
+      changed_when: False
+    - name: Generate an OpenSSH keypair
+      openssh_keypair:
+        path: "{{ user_home }}/.ssh/id_rsa"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+    - name: Retrieve SSH public key
+      fetch:
+        src: "{{ user_home }}/.ssh/id_rsa.pub"
+        dest: "../files/vpnserver/id_rsa.pub"
+        flat: True
+    - name: Create OpenVPN server
+      include_role:
+        name: setup_openvpn
+      vars:
+        openvpn_role: "server"
+    - name: Retrieve OpenVPN certificates for client
+      fetch:
+        src: /etc/openvpn/easy-rsa/pki/{{ item }}
+        dest: ../files/vpnserver/{{ item | basename }}
+        flat: True
+      loop:
+        - ca.crt
+        - issued/client.crt
+        - private/client.key
+        - ta.key
+
+
+# Making sure VPN server can connect to client adding its SSH key
+- hosts: "vpnclients"
+  gather_facts: True
+  become: True
+  tags: vpn-server
+  tasks:
+    - name: Get user HOME directory
+      command: echo $HOME
+      register: user_home_cmd
+      changed_when: False
+    - name: Define user home directory
+      set_fact:
+        user_home: "{{ user_home_cmd.stdout }}"
+      changed_when: False
+    - name: Put server's public key to client
+      lineinfile:
+        path: "{{ user_home }}/.ssh/authorized_keys"
+        line: "{{ lookup('file', '../files/vpnserver/id_rsa.pub') }}"
+
+
+# Installing KVM on machines
+- hosts: "kvm_hosts"
+  gather_facts: True
+  become: False
+  tags: kvm-install
+  tasks:
+    - name: Get user HOME directory
+      command: echo $HOME
+      register: user_home_cmd
+      changed_when: False
+    - name: Define user home directory
+      set_fact:
+        user_home: "{{ user_home_cmd.stdout }}"
+      changed_when: False
+    - name: Generate an OpenSSH keypair
+      openssh_keypair:
+        path: "{{ user_home }}/.ssh/id_rsa"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+    - name: Retrieve SSH public key
+      fetch:
+        src: "{{ user_home }}/.ssh/id_rsa.pub"
+        dest: "../files/{{ inventory_hostname }}_id_rsa.pub"
+        flat: True
+- hosts: "kvm_hosts"
+  gather_facts: True
+  become: True
+  tags: kvm-install
+  tasks:
+    - name: "Install KVM machines"
+      include_role:
+        name: install_qemu_kvm
+      vars:
+        network_name: br10
+        reset_vms: False
+        virtual_machines:
+          - name: "{{ inventory_hostname }}-node-1"
+            cpu: 1
+            mem: 2048
+            disk: 8G
+            bridge: "{{ network_name }}"
+            net:
+              ip: 192.168.30.2/24
+              gateway: 192.168.30.1
+              nameservers: "192.168.30.1,8.8.8.8"
+          - name: "{{ inventory_hostname }}-node-2"
+            cpu: 1
+            mem: 2048
+            disk: 8G
+            bridge: "{{ network_name }}"
+            net:
+              ip: 192.168.30.3/24
+              gateway: 192.168.30.1
+              nameservers: "192.168.30.1,8.8.8.8"
+          - name: "{{ inventory_hostname }}-node-3"
+            cpu: 2
+            mem: 2048
+            disk: 8G
+            bridge: "{{ network_name }}"
+            net:
+              ip: 192.168.30.4/24
+              gateway: 192.168.30.1
+              nameservers: "192.168.30.1,8.8.8.8"
+          - name: "{{ inventory_hostname }}-node-4"
+            cpu: 2
+            mem: 2048
+            disk: 8G
+            bridge: "{{ network_name }}"
+            net:
+              ip: 192.168.30.5/24
+              gateway: 192.168.30.1
+              nameservers: "192.168.30.1,8.8.8.8"
+        users:
+          - name: root
+            full_name: root
+            pub_keys:
+              - "{{ lookup('file', '../files/vpnserver/id_rsa.pub') | trim }}"
+              - "{{ lookup('file', '../files/{{ inventory_hostname }}_id_rsa.pub') | trim }}"
+
+
+# Configure hosts details to add VPN clients in each KVM guest
+# - hosts: "kvm_hosts"
+#   gather_facts: false
+#   tags: vpn-client
+#   serial: 1 # Making this playbook NOT run parallely for adding all hosts https://stackoverflow.com/a/42110297/4958081
+#   tasks:
+#     - name: "Building the VPN guests inventory variables"
+#       add_host:
+#         hostname: "{{ item.name }}"
+#         ansible_host: "{{ item.ip }}"
+#         ansible_user: "root"
+#         ansible_ssh_common_args: '-o ProxyCommand="ssh {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} -W %h:%p"'
+#         groups: [ "machines", "vpnclients" ]
+#       loop:
+#         - name: "{{ inventory_hostname }}-node-1"
+#           ip: "192.168.30.2"
+#         - name: "{{ inventory_hostname }}-node-2"
+#           ip: "192.168.30.3"
+#         - name: "{{ inventory_hostname }}-node-3"
+#           ip: "192.168.30.4"
+#         - name: "{{ inventory_hostname }}-node-4"
+#           ip: "192.168.30.5"
+
+- hosts: "kvm_hosts[0]"
+  gather_facts: false
+  become: False
+  tags: vpn-client
+  tasks:
+    - name: "debug"
+      debug:
+        msg: "{{ hostvars }}"
+    - name: "Hello"
+      shell: echo $(whoami)
+      register: cmd
+    - debug: msg="{{ cmd.stdout }}"
+
+
+# Configure VPN clients
+- hosts: "vpnclients[0]"
+  gather_facts: True
+  become: False
+  become_user: ubuntu
+  tags: vpn-client
+  tasks:
+    - name: "Hello"
+      shell: echo $(hostname)
+      register: cmd_hostname
+    - debug: msg="{{ cmd_hostname.stdout }}"
+    # - name: Enable IP forwarding
+    #   sysctl:
+    #     name: net.ipv4.ip_forward
+    #     value: '1'
+    #     sysctl_set: yes
+    #     state: present
+    #     reload: yes
+    # - name: Create destination directories
+    #   file:
+    #     path: "/etc/openvpn/client/{{ item }}"
+    #     state: directory
+    #   loop:
+    #     - issued
+    #     - private
+    # - name: Copy certificates and keys to the client
+    #   copy:
+    #     src: ../files/vpnserver/{{ item | basename }}
+    #     dest: /etc/openvpn/client/{{ item | basename }}
+    #     mode: "0640"
+    #   loop:
+    #     - ca.crt
+    #     - client.crt
+    #     - client.key
+    #     - ta.key
+    # - name: Connect OpenVPN client
+    #   include_role:
+    #     name: setup_openvpn
+    #   vars:
+    #     openvpn_role: "client"
+    #     openvpn_server_endpoint: "{{ hostvars[groups['vpnserver'][0]].ansible_host }}"
+    # - name: Retrieve OpenVPN client IP
+    #   shell: ip -f inet addr show tun0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p'
+    #   register: client_ip
+
+
+# Retrieve VPN IPs of each KVM guest
+
+
+# Create hadoop cluster
+- hosts: "hadoop"
+  gather_facts: True
+  tags: hadoop-install
+  roles:
+    - install_hadoop

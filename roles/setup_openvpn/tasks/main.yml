@@ -1,0 +1,32 @@
+---
+- name: Pre-check task
+  block:
+    - name: Checking if OS is Ubuntu
+      shell: cat /etc/*-release | grep Ubuntu
+      register: os_check
+    - name: Failing on invalid distro found
+      fail: msg="This role only supports Ubuntu. Did not found this server running it."
+      when: os_check.rc != 0
+
+- name: Import assert.yml
+  import_tasks: assert.yml
+  run_once: True
+
+- name: Install openvpn packages
+  ansible.builtin.package:
+    name: "{{ openvpn_packages }}"
+    state: present
+
+- name: "Server install"
+  include_tasks: "server.yml"
+  when: openvpn_role == "server"
+
+- name: "Client install"
+  include_tasks: "client.yml"
+  when: openvpn_role == "client"
+
+- name: Start and enable openvpn
+  service:
+    name: "{{ openvpn_service }}"
+    state: started
+    enabled: yes

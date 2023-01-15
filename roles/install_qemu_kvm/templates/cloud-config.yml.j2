@@ -1,0 +1,32 @@
+#cloud-config
+
+hostname: "{{ vm.name }}"
+manage_etc_hosts: true
+
+disable_root: false
+users: 
+{% for user in users %}
+- name: "{{ user.name }}"
+  gecos: "{{ user.full_name }}"
+  sudo: ALL=(ALL) NOPASSWD:ALL
+  groups: sudo
+  shell: /bin/bash
+  ssh_authorized_keys:
+  {% for pub_key in user.pub_keys %}
+  - {{ pub_key }}
+  {% endfor %}
+{% endfor %}
+
+write_files:
+  - path: /etc/default/grub
+    permissions: "0644"
+    content: |
+      GRUB_TERMINAL=serial
+      GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1"
+      GRUB_DEFAULT=0
+      GRUB_TIMEOUT_STYLE=hidden
+      GRUB_TIMEOUT=0
+      GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+      GRUB_CMDLINE_LINUX_DEFAULT="console=ttyS0"
+      GRUB_CMDLINE_LINUX=""
+    permissions: "0644"

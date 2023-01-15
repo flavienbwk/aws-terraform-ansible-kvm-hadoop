@@ -1,0 +1,24 @@
+---
+- name: Checking if network exists
+  shell: virsh net-list | grep {{ network_name }}
+  register: virsh_net_list
+  ignore_errors: True
+
+- name: "Configuring global {{ network_name }} network"
+  template:
+    src: templates/network-global.xml.j2
+    dest: /virt/network-global.xml
+  when: virsh_net_list.rc == 1 and network_name != 'virbr0'
+
+- name: Defining network
+  shell: virsh net-define /virt/network-global.xml
+  when: virsh_net_list.rc == 1 and network_name != 'virbr0'
+
+- name: Starting network
+  shell: |
+    virsh net-start br10
+    virsh net-autostart br10
+  when: virsh_net_list.rc == 1 and network_name != 'virbr0'
+
+- name: Enable console access
+  shell: systemctl enable --now serial-getty@ttyS0.service

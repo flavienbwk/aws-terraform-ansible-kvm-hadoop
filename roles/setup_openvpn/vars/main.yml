@@ -1,0 +1,3 @@
+---
+openvpn_role: # client or server
+openvpn_server_endpoint: # if using client : IP or domain of server 

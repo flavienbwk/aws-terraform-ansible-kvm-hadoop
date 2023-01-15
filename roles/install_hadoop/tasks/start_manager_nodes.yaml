@@ -1,0 +1,52 @@
+---
+- name: create nodemanager log dir
+  when: "'hadoop_managers' in group_names"
+  file:
+    path: "{{ hadoop_yarn_site['yarn.nodemanager.log-dirs'] | default(hadoop_yarn_site_defaults['yarn.nodemanager.log-dirs']) }}"
+    state: directory
+    mode: '774'
+  become: yes
+  become_user: hdfs
+
+- name: create nodemanager local dir
+  when: "'hadoop_managers' in group_names"
+  file:
+    path: "{{ hadoop_yarn_site['yarn.nodemanager.local-dirs'] | default(hadoop_yarn_site_defaults['yarn.nodemanager.local-dirs']) }}"
+    state: directory
+    mode: '774'
+  become: yes
+  become_user: hdfs
+
+- name: start manager nodes 1/2
+  block:  
+  - name: restart resourcemanager
+    include_tasks: ./restart_hadoop_service.yaml
+    vars:
+      start_service: "{{ 'hadoop_managers' in group_names }}"
+      hadoop_service_binary: yarn
+      hadoop_service_name: resourcemanager
+  - name: restart nodemanager
+    include_tasks: ./restart_hadoop_service.yaml
+    vars:
+      start_service: "{{ 'hadoop_managers' in group_names }}"
+      hadoop_service_binary: yarn
+      hadoop_service_name: nodemanager
+  - name: restart proxyserver
+    include_tasks: ./restart_hadoop_service.yaml
+    vars:
+      start_service: "{{ 'hadoop_managers' in group_names }}"
+      hadoop_service_binary: yarn
+      hadoop_service_name: proxyserver
+  become: yes
+  become_user: yarn
+
+- name: start manager nodes 2/2
+  block:
+  - name: restart historyserver
+    include_tasks: ./restart_hadoop_service.yaml
+    vars:
+      start_service: "{{ 'hadoop_managers' in group_names }}"
+      hadoop_service_binary: mapred
+      hadoop_service_name: historyserver
+  become: yes
+  become_user: mapred
