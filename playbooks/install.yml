@@ -142,45 +142,32 @@
 
 
 # Configure hosts details to add VPN clients in each KVM guest
-# - hosts: "kvm_hosts"
-#   gather_facts: false
-#   tags: vpn-client
-#   serial: 1 # Making this playbook NOT run parallely for adding all hosts https://stackoverflow.com/a/42110297/4958081
-#   tasks:
-#     - name: "Building the VPN guests inventory variables"
-#       add_host:
-#         hostname: "{{ item.name }}"
-#         ansible_host: "{{ item.ip }}"
-#         ansible_user: "root"
-#         ansible_ssh_common_args: '-o ProxyCommand="ssh {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} -W %h:%p"'
-#         groups: [ "machines", "vpnclients" ]
-#       loop:
-#         - name: "{{ inventory_hostname }}-node-1"
-#           ip: "192.168.30.2"
-#         - name: "{{ inventory_hostname }}-node-2"
-#           ip: "192.168.30.3"
-#         - name: "{{ inventory_hostname }}-node-3"
-#           ip: "192.168.30.4"
-#         - name: "{{ inventory_hostname }}-node-4"
-#           ip: "192.168.30.5"
-
-- hosts: "kvm_hosts[0]"
+- hosts: "kvm_hosts"
   gather_facts: false
-  become: False
   tags: vpn-client
+  serial: 1 # Making this playbook NOT run parallely for adding all hosts https://stackoverflow.com/a/42110297/4958081
   tasks:
-    - name: "debug"
-      debug:
-        msg: "{{ hostvars }}"
-    - name: "Hello"
-      shell: echo $(whoami)
-      register: cmd
-    - debug: msg="{{ cmd.stdout }}"
+    - name: "Building the VPN guests inventory variables"
+      add_host:
+        hostname: "{{ item.name }}"
+        ansible_host: "{{ item.ip }}"
+        ansible_user: "root"
+        ansible_ssh_common_args: "-o \"ProxyCommand ssh -T -q -o ForwardAgent=yes {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} 'ssh-add -t 1 ~/.ssh/id_rsa && nc %h %p'\""
+        groups: [ "machines", "vpnclients" ]
+      loop:
+        - name: "{{ inventory_hostname }}-node-1"
+          ip: "192.168.30.2"
+        - name: "{{ inventory_hostname }}-node-2"
+          ip: "192.168.30.3"
+        - name: "{{ inventory_hostname }}-node-3"
+          ip: "192.168.30.4"
+        - name: "{{ inventory_hostname }}-node-4"
+          ip: "192.168.30.5"
 
 
 # Configure VPN clients
-- hosts: "vpnclients[0]"
-  gather_facts: True
+- hosts: "vpnclients[1]"
+  gather_facts: False
   become: False
   become_user: ubuntu
   tags: vpn-client
