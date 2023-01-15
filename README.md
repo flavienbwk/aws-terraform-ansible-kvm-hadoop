@@ -10,14 +10,21 @@ In this architecture, we need to setup a VPN server to connect all KVM guests so
 
 Basically, you can't do it on classic AWS [unless you have a dedicated instance](https://aws.amazon.com/blogs/aws/new-amazon-ec2-bare-metal-instances-with-direct-access-to-hardware). You are recommended to do it on [AWS Dedicated EC2](https://aws.amazon.com/ec2/pricing/dedicated-instances).
 
-As I had to ask a limit raise for my account to be able to instanciate these kind of instance, I used [Scaleway Elastic Metal](https://www.scaleway.com/en/elastic-metal/) in the meantime.
+As I had to ask a limit raise for my account to be able to instanciate this kind of instance, I used [Scaleway Elastic Metal](https://www.scaleway.com/en/elastic-metal/) in the meantime.
 
 ## 1. Instanciate the infrastructure
 
 ![Architecture schema](./schema.jpg)
 
 <details open>
-<summary>👉 Using Scaleway</summary>
+<summary>👉 Using AWS (price: 822.71$/month)</summary>
+
+_To be written..._
+
+</details>
+
+<details open>
+<summary>👉 Using Scaleway (price: 303.37$/month)</summary>
 
 1. Go to your Scaleway account > [Credentials](https://console.scaleway.com/project/credentials) and create a new API key `terraform-ansible-kvm-hadoop`
 
@@ -66,34 +73,29 @@ As I had to ask a limit raise for my account to be able to instanciate these kin
     ANSIBLE_CONFIG=$(pwd)/ansible.cfg ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-server
     ```
 
-2. Install KVM on all machines
+2. Install KVM on each host and create guests
 
     ```bash
     ansible-galaxy collection install community.libvirt
     ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t kvm-install
     ```
 
-3. Create KVMs
+3. Connect all machines to communicate with each other (OpenVPN clients)
+
+    Connect and retrieve IP of each KVM guest.
 
     ```bash
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t kvm-configuration
+    ssh-add -D
+    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-client
     ```
 
-4. Connect all machines to communicate with each other (OpenVPN clients)
-
-    Retrieving IP of each KVM.
-
-    ```bash
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-clients
-    ```
-
-5. Install Hadoop cluster
+4. Install Hadoop cluster
 
     ```bash
     ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hadoop-install
     ```
 
-6. Install HDFS fuse client
+5. Install HDFS fuse client
 
     ```bash
     ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hdfs-fuse-install

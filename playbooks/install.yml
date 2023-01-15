@@ -152,7 +152,7 @@
         hostname: "{{ item.name }}"
         ansible_host: "{{ item.ip }}"
         ansible_user: "root"
-        ansible_ssh_common_args: "-o \"ProxyCommand ssh -T -q -o ForwardAgent=yes {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} 'ssh-add -t 1 ~/.ssh/id_rsa && nc %h %p'\""
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o \"ProxyCommand ssh -T -q -o StrictHostKeyChecking=no -o ForwardAgent=yes {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} 'ssh-add -t 1 ~/.ssh/id_rsa && nc %h %p'\"" # Connect to guests through their respective hosts
         groups: [ "machines", "vpnclients" ]
       loop:
         - name: "{{ inventory_hostname }}-node-1"
@@ -166,49 +166,44 @@
 
 
 # Configure VPN clients
-- hosts: "vpnclients[1]"
-  gather_facts: False
-  become: False
-  become_user: ubuntu
+- hosts: "vpnclients"
+  gather_facts: True
   tags: vpn-client
+  become: True
   tasks:
-    - name: "Hello"
-      shell: echo $(hostname)
-      register: cmd_hostname
-    - debug: msg="{{ cmd_hostname.stdout }}"
-    # - name: Enable IP forwarding
-    #   sysctl:
-    #     name: net.ipv4.ip_forward
-    #     value: '1'
-    #     sysctl_set: yes
-    #     state: present
-    #     reload: yes
-    # - name: Create destination directories
-    #   file:
-    #     path: "/etc/openvpn/client/{{ item }}"
-    #     state: directory
-    #   loop:
-    #     - issued
-    #     - private
-    # - name: Copy certificates and keys to the client
-    #   copy:
-    #     src: ../files/vpnserver/{{ item | basename }}
-    #     dest: /etc/openvpn/client/{{ item | basename }}
-    #     mode: "0640"
-    #   loop:
-    #     - ca.crt
-    #     - client.crt
-    #     - client.key
-    #     - ta.key
-    # - name: Connect OpenVPN client
-    #   include_role:
-    #     name: setup_openvpn
-    #   vars:
-    #     openvpn_role: "client"
-    #     openvpn_server_endpoint: "{{ hostvars[groups['vpnserver'][0]].ansible_host }}"
-    # - name: Retrieve OpenVPN client IP
-    #   shell: ip -f inet addr show tun0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p'
-    #   register: client_ip
+    - name: Enable IP forwarding
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        sysctl_set: yes
+        state: present
+        reload: yes
+    - name: Create destination directories
+      file:
+        path: "/etc/openvpn/client/{{ item }}"
+        state: directory
+      loop:
+        - issued
+        - private
+    - name: Copy certificates and keys to the client
+      copy:
+        src: ../files/vpnserver/{{ item | basename }}
+        dest: /etc/openvpn/client/{{ item | basename }}
+        mode: "0640"
+      loop:
+        - ca.crt
+        - client.crt
+        - client.key
+        - ta.key
+    - name: Connect OpenVPN client
+      include_role:
+        name: setup_openvpn
+      vars:
+        openvpn_role: "client"
+        openvpn_server_endpoint: "{{ hostvars[groups['vpnserver'][0]].ansible_host }}"
+    - name: Retrieve OpenVPN client IP
+      shell: ip -f inet addr show tun0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p'
+      register: client_ip
 
 
 # Retrieve VPN IPs of each KVM guest

@@ -3,16 +3,26 @@
 port 1194
 proto udp4
 dev tun
+mode server
+tls-server
+duplicate-cn # Important so the same certificate can bind multiple users
+
 ca /etc/openvpn/server/ca.crt
 cert /etc/openvpn/server/server.crt
 key /etc/openvpn/server/server.key
 dh /etc/openvpn/server/dh.pem
+
 topology subnet
+push "topology subnet"
 server 20.20.20.0 255.255.255.0
 ifconfig-pool-persist ipp.txt
-push "redirect-gateway def1 bypass-dhcp"
+route-gateway 20.20.20.1
+client-to-client # Clients can communicate with eachother
+
+push "route-gateway 20.20.20.1"
 push "dhcp-option DNS 1.1.1.1"
 push "dhcp-option DNS 1.0.0.1"
+
 keepalive 10 120
 #tls-crypt /etc/openvpn/server/myvpn.tlsauth 0
 cipher AES-256-CBC

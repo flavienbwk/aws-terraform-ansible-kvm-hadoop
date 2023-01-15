@@ -20,4 +20,8 @@ ca /etc/openvpn/client/ca.crt
 cert /etc/openvpn/client/client.crt
 key /etc/openvpn/client/client.key
 auth SHA512
-pull-filter ignore "redirect-gateway def1 bypass-dhcp"
+
+# Logs
+status /var/log/openvpn/openvpn-status.log
+log-append  /var/log/openvpn/openvpn.log
+verb 3
