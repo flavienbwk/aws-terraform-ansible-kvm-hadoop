@@ -19,7 +19,9 @@ As I had to ask a limit raise for my account to be able to instanciate this kind
 <details open>
 <summary>👉 Using AWS (price: 822.71$/month)</summary>
 
-_To be written..._
+Getting dedicated EC2 instances looks complicated in my own experience (I've contacted the customer service multiple times). You must get a significant bill during a significant amount of time to be eligible to ask having the rights to start this kind of instance.
+
+The Terraform plans present in this repository should work if you have rights to instanciate dedicated EC2 instances.
 
 </details>
 
@@ -85,6 +87,7 @@ _To be written..._
     Connect and retrieve IP of each KVM guest.
 
     ```bash
+    eval `ssh-agent`
     ssh-add -D
     ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-client
     ```

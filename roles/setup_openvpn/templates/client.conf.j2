@@ -3,7 +3,7 @@
 client
 tls-client
 pull
-dev tun
+dev {{ vpn_interface_prefix }}
 proto udp4
 remote {{ openvpn_server_endpoint }} 1194 udp4
 resolv-retry infinite

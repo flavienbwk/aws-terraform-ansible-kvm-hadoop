@@ -42,7 +42,7 @@
 
 
 # Making sure VPN server can connect to client adding its SSH key
-- hosts: "vpnclients"
+- hosts: "vpn_clients"
   gather_facts: True
   become: True
   tags: vpn-server
@@ -94,8 +94,8 @@
       include_role:
         name: install_qemu_kvm
       vars:
-        network_name: br10
-        reset_vms: False
+        network_name: "{{ kvm_interface_name }}"
+        reset_vms: "{{ kvm_reset_vms }}"
         virtual_machines:
           - name: "{{ inventory_hostname }}-node-1"
             cpu: 1
@@ -141,19 +141,19 @@
               - "{{ lookup('file', '../files/{{ inventory_hostname }}_id_rsa.pub') | trim }}"
 
 
-# Configure hosts details to add VPN clients in each KVM guest
+# Configure hosts details to further configure each KVM guest
 - hosts: "kvm_hosts"
-  gather_facts: false
-  tags: vpn-client
+  gather_facts: True
+  tags: [ 'vpn-client',  'hadoop' ]
   serial: 1 # Making this playbook NOT run parallely for adding all hosts https://stackoverflow.com/a/42110297/4958081
   tasks:
     - name: "Building the VPN guests inventory variables"
       add_host:
-        hostname: "{{ item.name }}"
+        name: "{{ item.name }}"
         ansible_host: "{{ item.ip }}"
         ansible_user: "root"
         ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o \"ProxyCommand ssh -T -q -o StrictHostKeyChecking=no -o ForwardAgent=yes {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} 'ssh-add -t 1 ~/.ssh/id_rsa && nc %h %p'\"" # Connect to guests through their respective hosts
-        groups: [ "machines", "vpnclients" ]
+        groups: [ "machines", "vpn_clients", "kvm_guests" ]
       loop:
         - name: "{{ inventory_hostname }}-node-1"
           ip: "192.168.30.2"
@@ -166,7 +166,7 @@
 
 
 # Configure VPN clients
-- hosts: "vpnclients"
+- hosts: "vpn_clients"
   gather_facts: True
   tags: vpn-client
   become: True
@@ -201,17 +201,66 @@
       vars:
         openvpn_role: "client"
         openvpn_server_endpoint: "{{ hostvars[groups['vpnserver'][0]].ansible_host }}"
-    - name: Retrieve OpenVPN client IP
-      shell: ip -f inet addr show tun0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p'
-      register: client_ip
 
 
 # Retrieve VPN IPs of each KVM guest
+- hosts: "kvm_guests"
+  gather_facts: False
+  tags: hadoop
+  tasks:
+    - name: "Retrieving VPN IPs"
+      shell: echo $(hostname)
+      register: cmd_hostname
+    - name: "Retrieving VPN IPs"
+      shell: ip -f inet addr show tun0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p'
+      register: cmd_tun0_ip
+    - debug:
+        msg: "{{ cmd_hostname.stdout }} should be {{ hostvars[inventory_hostname].inventory_hostname }} : {{ cmd_tun0_ip.stdout }}"
+# Currently, giving me :
+# TASK [debug] ********************************************************************************************************
+# ok: [machine-1-node-1] => {
+#     "msg": "machine-1-node-1 should be machine-1-node-1 : 20.20.20.19"
+# }
+# ok: [machine-1-node-2] => {
+#     "msg": "machine-1-node-2 should be machine-1-node-2 : 20.20.20.23"
+# }
+# ok: [machine-1-node-3] => {
+#     "msg": "machine-1-node-3 should be machine-1-node-3 : 20.20.20.25"
+# }
+# ok: [machine-1-node-4] => {
+#     "msg": "machine-1-node-4 should be machine-1-node-4 : 20.20.20.16"
+# }
+# ok: [machine-2-node-1] => {
+#     "msg": "machine-2-node-1 should be machine-2-node-1 : 20.20.20.19"
+# }
+# ok: [machine-2-node-2] => {
+#     "msg": "machine-1-node-2 should be machine-2-node-2 : 20.20.20.23"
+# }
+# ok: [machine-2-node-3] => {
+#     "msg": "machine-1-node-3 should be machine-2-node-3 : 20.20.20.25"
+# }
+# ok: [machine-2-node-4] => {
+#     "msg": "machine-1-node-4 should be machine-2-node-4 : 20.20.20.16"
+# }
+# ok: [machine-3-node-1] => {
+#     "msg": "machine-2-node-1 should be machine-3-node-1 : 20.20.20.19"
+# }
+# ok: [machine-3-node-2] => {
+#     "msg": "machine-1-node-2 should be machine-3-node-2 : 20.20.20.23"
+# }
+# ok: [machine-3-node-3] => {
+#     "msg": "machine-1-node-3 should be machine-3-node-3 : 20.20.20.25"
+# }
+# ok: [machine-3-node-4] => {
+#     "msg": "machine-1-node-4 should be machine-3-node-4 : 20.20.20.16"
+# }
+
+# Attribute guests to Hadoop nodes
 
 
 # Create hadoop cluster
-- hosts: "hadoop"
-  gather_facts: True
-  tags: hadoop-install
-  roles:
-    - install_hadoop
+# - hosts: "hadoop"
+#   gather_facts: True
+#   tags: hadoop-install
+#   roles:
+#     - install_hadoop
