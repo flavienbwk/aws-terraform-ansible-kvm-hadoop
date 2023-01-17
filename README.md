@@ -72,14 +72,14 @@ The Terraform plans present in this repository should work if you have rights to
 1. Install the OpenVPN server
 
     ```bash
-    ANSIBLE_CONFIG=$(pwd)/ansible.cfg ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-server
+    ANSIBLE_CONFIG=$(pwd)/ansible.cfg ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-server
     ```
 
 2. Install KVM on each host and create guests
 
     ```bash
     ansible-galaxy collection install community.libvirt
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t kvm-install
+    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t kvm-install
     ```
 
 3. Connect all machines to communicate with each other (OpenVPN clients)
@@ -89,19 +89,19 @@ The Terraform plans present in this repository should work if you have rights to
     ```bash
     eval `ssh-agent`
     ssh-add -D
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-client
+    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-client
     ```
 
 4. Install Hadoop cluster
 
     ```bash
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hadoop-install
+    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hadoop
     ```
 
 5. Install HDFS fuse client
 
     ```bash
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hdfs-fuse-install
+    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hdfs-fuse-install
     ```
 
 ## Inspirations

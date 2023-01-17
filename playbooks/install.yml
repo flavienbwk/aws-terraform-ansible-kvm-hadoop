@@ -143,16 +143,16 @@
 
 # Configure hosts details to further configure each KVM guest
 - hosts: "kvm_hosts"
-  gather_facts: True
+  gather_facts: False
   tags: [ 'vpn-client',  'hadoop' ]
-  serial: 1 # Making this playbook NOT run parallely for adding all hosts https://stackoverflow.com/a/42110297/4958081
+  serial: 1 # Making this playbook NOT run parallely https://stackoverflow.com/a/42110297/4958081
   tasks:
     - name: "Building the VPN guests inventory variables"
       add_host:
         name: "{{ item.name }}"
         ansible_host: "{{ item.ip }}"
         ansible_user: "root"
-        ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o \"ProxyCommand ssh -T -q -o StrictHostKeyChecking=no -o ForwardAgent=yes {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} 'ssh-add -t 1 ~/.ssh/id_rsa && nc %h %p'\"" # Connect to guests through their respective hosts
+        ansible_ssh_common_args: "-o ControlMaster=auto -o ControlPersist=60s -o ControlPath=~/.ansible/cp/{{inventory_hostname}}-ssh-%h-%p-%r -o StrictHostKeyChecking=no -o ForwardAgent=yes -o ProxyCommand=\"ssh -T -q -o 'ForwardAgent yes' {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} 'ssh-add -t 1 && nc %h %p'\"" # Connect to guests through their respective hosts
         groups: [ "machines", "vpn_clients", "kvm_guests" ]
       loop:
         - name: "{{ inventory_hostname }}-node-1"
@@ -187,7 +187,7 @@
         - private
     - name: Copy certificates and keys to the client
       copy:
-        src: ../files/vpnserver/{{ item | basename }}
+        content: "{{ lookup('file', '../files/vpnserver/' + item | trim | basename) }}"
         dest: /etc/openvpn/client/{{ item | basename }}
         mode: "0640"
       loop:
@@ -216,44 +216,6 @@
       register: cmd_tun0_ip
     - debug:
         msg: "{{ cmd_hostname.stdout }} should be {{ hostvars[inventory_hostname].inventory_hostname }} : {{ cmd_tun0_ip.stdout }}"
-# Currently, giving me :
-# TASK [debug] ********************************************************************************************************
-# ok: [machine-1-node-1] => {
-#     "msg": "machine-1-node-1 should be machine-1-node-1 : 20.20.20.19"
-# }
-# ok: [machine-1-node-2] => {
-#     "msg": "machine-1-node-2 should be machine-1-node-2 : 20.20.20.23"
-# }
-# ok: [machine-1-node-3] => {
-#     "msg": "machine-1-node-3 should be machine-1-node-3 : 20.20.20.25"
-# }
-# ok: [machine-1-node-4] => {
-#     "msg": "machine-1-node-4 should be machine-1-node-4 : 20.20.20.16"
-# }
-# ok: [machine-2-node-1] => {
-#     "msg": "machine-2-node-1 should be machine-2-node-1 : 20.20.20.19"
-# }
-# ok: [machine-2-node-2] => {
-#     "msg": "machine-1-node-2 should be machine-2-node-2 : 20.20.20.23"
-# }
-# ok: [machine-2-node-3] => {
-#     "msg": "machine-1-node-3 should be machine-2-node-3 : 20.20.20.25"
-# }
-# ok: [machine-2-node-4] => {
-#     "msg": "machine-1-node-4 should be machine-2-node-4 : 20.20.20.16"
-# }
-# ok: [machine-3-node-1] => {
-#     "msg": "machine-2-node-1 should be machine-3-node-1 : 20.20.20.19"
-# }
-# ok: [machine-3-node-2] => {
-#     "msg": "machine-1-node-2 should be machine-3-node-2 : 20.20.20.23"
-# }
-# ok: [machine-3-node-3] => {
-#     "msg": "machine-1-node-3 should be machine-3-node-3 : 20.20.20.25"
-# }
-# ok: [machine-3-node-4] => {
-#     "msg": "machine-1-node-4 should be machine-3-node-4 : 20.20.20.16"
-# }
 
 # Attribute guests to Hadoop nodes
 
