@@ -5,7 +5,7 @@
     {% if groups['hadoop_namenodes']|length > 1 %}
     <value>hdfs://{{ hadoop_cluster_name }}</value>
     {% else %}
-    <value>hdfs://{{ hostvars[groups['hadoop_namenodes'][0]].internal_host }}:9000</value>
+    <value>hdfs://{{ hostvars[groups['hadoop_namenodes'][0]].ansible_host }}:9000</value>
     {% endif %}
   </property>
 

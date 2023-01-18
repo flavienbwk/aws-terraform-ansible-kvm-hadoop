@@ -3,7 +3,7 @@
   delegate_to: localhost
   template:
     src: ./templates/{{ item }}.j2
-    dest: "../../files/hadoop_templates/{{ item }}"
+    dest: "../../files/hadoop/{{ item }}"
     owner: hdfs
     group: hadoop
   loop:
@@ -15,7 +15,7 @@
 
 - name: configure config files
   copy:
-    content: "{{ lookup('file', '../../files/hadoop_templates/' + item) }}"
+    content: "{{ lookup('file', '../../files/hadoop/' + item) }}"
     dest: "{{ hadoop_distro_home }}/etc/hadoop/{{ item }}"
     owner: hdfs
     group: hadoop
