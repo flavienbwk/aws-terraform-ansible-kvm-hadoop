@@ -4,7 +4,7 @@ A sample project to install Hadoop on KVM with Ansible on an AWS machine instanc
 
 This repo is for training purposes. If you use Cloud providers, only use KVM if you absolutely NEEDS TO. It asks for a more costly infrastructures, time-consuming instanciations, adds a layer of complexity already managed by Cloud providers (network, machines configuration) and as such is a burden to maintain. This architecture is only useful if you have big machines that must include strictly partitioned VMs.
 
-In this architecture, we need to setup a VPN server to connect all KVM guests so they can communicate. This will allow us to make Hadoop nodes communicate through the VPN network.
+In this architecture, we will setup a VPN server to make all KVM guests communicate. This will allow us to make Hadoop nodes communicate through the VPN network.
 
 ## KVM in the Cloud
 
@@ -87,8 +87,7 @@ The Terraform plans present in this repository should work if you have rights to
     Connect and retrieve IP of each KVM guest.
 
     ```bash
-    eval `ssh-agent`
-    ssh-add -D
+    eval `ssh-agent` && ssh-add -D
     ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-client
     ```
 

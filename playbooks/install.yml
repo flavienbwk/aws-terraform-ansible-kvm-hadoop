@@ -142,6 +142,7 @@
 
 
 # Configure hosts details to further configure each KVM guest
+# Reaching KVM guests through their respective host
 - hosts: "kvm_hosts"
   gather_facts: False
   tags: [ 'vpn-client',  'hadoop' ]
@@ -152,7 +153,7 @@
         name: "{{ item.name }}"
         ansible_host: "{{ item.ip }}"
         ansible_user: "root"
-        ansible_ssh_common_args: "-o ControlMaster=auto -o ControlPersist=60s -o ControlPath=~/.ansible/cp/{{inventory_hostname}}-ssh-%h-%p-%r -o StrictHostKeyChecking=no -o ForwardAgent=yes -o ProxyCommand=\"ssh -T -q -o 'ForwardAgent yes' {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} 'ssh-add -t 1 && nc %h %p'\"" # Connect to guests through their respective hosts
+        ansible_ssh_common_args: "-o ControlMaster=auto -o ControlPersist=60s -o ControlPath=~/.ansible/cp/{{inventory_hostname}}-ssh-%h-%p-%r -o StrictHostKeyChecking=no -o ForwardAgent=yes -o ProxyCommand=\"ssh -T -q -o 'ForwardAgent yes' {{ ansible_user }}@{{ hostvars[inventory_hostname].ansible_host }} 'ssh-add -t 60 && nc %h %p'\"" # Connect to guests through their respective hosts
         groups: [ "machines", "vpn_clients", "kvm_guests" ]
       loop:
         - name: "{{ inventory_hostname }}-node-1"
@@ -209,20 +210,48 @@
   tags: hadoop
   tasks:
     - name: "Retrieving VPN IPs"
-      shell: echo $(hostname)
-      register: cmd_hostname
-    - name: "Retrieving VPN IPs"
       shell: ip -f inet addr show tun0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p'
       register: cmd_tun0_ip
-    - debug:
-        msg: "{{ cmd_hostname.stdout }} should be {{ hostvars[inventory_hostname].inventory_hostname }} : {{ cmd_tun0_ip.stdout }}"
+      changed_when: False
+    - name: "Setting IP"
+      set_fact:
+        vpn_ip: "{{ cmd_tun0_ip.stdout_lines[0] | trim }}"
 
-# Attribute guests to Hadoop nodes
+
+# Set Hadoop node role associated with VPN IP for each KVM guest
+# Reaching KVM guests through the VPN server
+- hosts: "kvm_hosts"
+  gather_facts: False
+  serial: 1
+  tags: [ 'vpn-client',  'hadoop' ]
+  tasks:
+    - name: "Processing {{ item.group }} : {{ item.name }}"
+      add_host:
+        name: "{{ item.name }}"
+        ansible_host: "{{ item.vpn_ip }}"
+        ansible_ssh_common_args: "-o ControlMaster=auto -o ControlPersist=60s -o ControlPath=~/.ansible/cp/{{ item.name }}-vpn-%h-%p-%r -o StrictHostKeyChecking=no -o ForwardAgent=yes -o ProxyCommand=\"ssh -T -q -o 'ForwardAgent yes' {{ hostvars[groups['vpnserver'][0]].ansible_user }}@{{ hostvars[groups['vpnserver'][0]].ansible_host}} 'ssh-add -t 60 && nc %h %p'\"" # Connect to guests through their respective hosts
+        groups: [ "{{ item.group }}" ]
+      loop:
+        - name: "{{ inventory_hostname }}-node-1"
+          vpn_ip: "{{ hostvars[inventory_hostname + '-node-1'].vpn_ip }}"
+          group: "hadoop_namenodes"
+        - name: "{{ inventory_hostname }}-node-2"
+          vpn_ip: "{{ hostvars[inventory_hostname + '-node-2'].vpn_ip }}"
+          group: "hadoop_managers"
+        - name: "{{ inventory_hostname }}-node-3"
+          vpn_ip: "{{ hostvars[inventory_hostname + '-node-3'].vpn_ip }}"
+          group: "hadoop_datanodes"
+        - name: "{{ inventory_hostname }}-node-4"
+          vpn_ip: "{{ hostvars[inventory_hostname + '-node-4'].vpn_ip }}"
+          group: "hadoop_datanodes"
 
 
-# Create hadoop cluster
-# - hosts: "hadoop"
-#   gather_facts: True
-#   tags: hadoop-install
-#   roles:
-#     - install_hadoop
+# Create the hadoop cluster
+- hosts: "hadoop"
+  gather_facts: True
+  tags: hadoop-install
+  vars:
+    hadoop_cluster_name: mycluster
+    hadoop_reformat_namenode: True
+  roles:
+    - install_hadoop
