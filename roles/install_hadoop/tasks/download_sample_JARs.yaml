@@ -5,9 +5,6 @@
     state: directory
   tags: hadoop, hadoopInstallSampleJARs
 
-- debug:
-    msg: "{{hadoop_sample_jar_pkgs}}"
-
 - name: copy sample jars
   when: hadoop_sample_jar_pkgs != None
   copy:

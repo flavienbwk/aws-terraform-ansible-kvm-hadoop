@@ -6,9 +6,15 @@ This repo is for training purposes. If you use Cloud providers, only use KVM if 
 
 In this architecture, we will setup a VPN server to make all KVM guests communicate. This will allow us to make Hadoop nodes communicate through the VPN network.
 
+Here is an example of what you can achieve with this bunch of playbooks :
+
+![DFS storage types tab](./dfs_storage_type.png)
+
+![Hadoop cluster live datanodes](./datanodes_alive.png)
+
 ## KVM in the Cloud
 
-Basically, you can't do it on classic AWS [unless you have a dedicated instance](https://aws.amazon.com/blogs/aws/new-amazon-ec2-bare-metal-instances-with-direct-access-to-hardware). You are recommended to do it on [AWS Dedicated EC2](https://aws.amazon.com/ec2/pricing/dedicated-instances).
+Basically, you can't do it on classic AWS [unless you have a dedicated instance](https://aws.amazon.com/blogs/aws/new-amazon-ec2-bare-metal-instances-with-direct-access-to-hardware). You are recommended to do it on a [Dedicated EC2 instance](https://aws.amazon.com/ec2/pricing/dedicated-instances).
 
 As I had to ask a limit raise for my account to be able to instanciate this kind of instance, I used [Scaleway Elastic Metal](https://www.scaleway.com/en/elastic-metal/) in the meantime.
 

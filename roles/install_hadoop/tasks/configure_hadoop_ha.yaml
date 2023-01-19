@@ -1,11 +1,28 @@
 ---
-- name: change owner of shared edits dir
-  when: inventory_hostname == groups['hadoop_namenodes'][0]
-  file:
-    path: "{{ hadoop_hdfs_site['dfs.namenode.shared.edits.dir'] }}"
-    owner: hdfs
-    group: hadoop
-    mode: u=rwx,g=rwx,o=r
-    state: directory
-  tags: hadoop, configureHadoop, configureHadoopHA
+- name: check that namenodes have required properties in HA mode
+  when: inventory_hostname in groups['hadoop_namenodes']
+  assert:
+    that:
+      - hostvars[inventory_hostname].ansible_user is defined
+      - hostvars[inventory_hostname].ansible_user != ""
+      - hostvars[inventory_hostname].ansible_host is defined
+      - hostvars[inventory_hostname].ansible_host != ""
+      - hostvars[inventory_hostname].public_key is defined
+      - hostvars[inventory_hostname].public_key != ""
 
+- name: make sure shared dir is unmounted
+  when: hadoop_reformat_namenode and inventory_hostname in groups['hadoop_namenodes'] and inventory_hostname != groups['hadoop_namenodes'][0]
+  shell: fusermount -u "{{ hadoop_hdfs_site['dfs.namenode.shared.edits.dir'] }}"
+  failed_when: False
+
+- name: make sure shared dir is created
+  when: inventory_hostname in groups['hadoop_namenodes']
+  shell: "{{ item }}"
+  with_items: 
+    - mkdir -p "{{ hadoop_hdfs_site['dfs.namenode.shared.edits.dir'] }}"
+    - chmod 775 -R "{{ hadoop_hdfs_site['dfs.namenode.shared.edits.dir'] }}"
+    - chown -R hdfs:hadoop "{{ hadoop_hdfs_site['dfs.namenode.shared.edits.dir'] }}"
+
+- name: attach SSHFS directory if host is a namenode
+  when: inventory_hostname in groups['hadoop_namenodes'] and inventory_hostname != groups['hadoop_namenodes'][0]
+  shell: nohup sshfs -o reconnect,allow_other {{ hostvars[groups['hadoop_namenodes'][0]].ansible_user }}@{{ hostvars[groups['hadoop_namenodes'][0]].ansible_host }}:"{{ hadoop_hdfs_site['dfs.namenode.shared.edits.dir'] }}" "{{ hadoop_hdfs_site['dfs.namenode.shared.edits.dir'] }}" &

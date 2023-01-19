@@ -7,5 +7,5 @@
       start_service: "{{ 'hadoop_datanodes' in group_names }}"
       hadoop_service_binary: hdfs
       hadoop_service_name: datanode
-  become: yes
+  become: True
   become_user: hdfs

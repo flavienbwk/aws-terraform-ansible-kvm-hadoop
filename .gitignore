@@ -1,3 +1,5 @@
 .vscode
 files/*
 !files/.gitkeep
+!files/hadoop/.gitkeep
+!files/vpnserver/.gitkeep

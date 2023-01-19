@@ -8,11 +8,12 @@
       hadoop_service_binary: hdfs
       hadoop_service_name: namenode
     
-  - name: transition first NameNode to active    
+  - name: transition first NameNode to active
     when: groups['hadoop_namenodes']|length > 1 and inventory_hostname == groups['hadoop_namenodes'][0]
     shell: "{{ hadoop_distro_home }}/bin/hdfs haadmin -transitionToActive --forceactive nn1"   
     register: result
-    retries: 3
+    retries: 5
+    delay: 15
     until: result.rc == 0
   
   - name: bootstrap other NameNodes
@@ -25,5 +26,5 @@
     vars:
       hadoop_service_binary: hdfs
       hadoop_service_name: namenode
-  become: yes
+  become: True
   become_user: hdfs
