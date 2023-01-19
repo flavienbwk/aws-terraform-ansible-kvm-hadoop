@@ -16,11 +16,11 @@
         {% endif %}
         <property>
             <name>dfs.namenode.rpc-address.{{ hadoop_cluster_name }}.{{ 'nn' + (loop.index0 + 1)|string }}</name>
-            <value>{{ hostvars[node].internal_host }}:8020</value>
+            <value>{{ hostvars[node].ansible_host }}:8020</value>
         </property>
         <property>
             <name>dfs.namenode.http-address.{{ hadoop_cluster_name }}.{{ 'nn' + (loop.index0 + 1)|string }}</name>
-            <value>{{ hostvars[node].internal_host }}:9870</value>
+            <value>{{ hostvars[node].ansible_host }}:9870</value>
         </property>
     {% endfor %}
     <property>

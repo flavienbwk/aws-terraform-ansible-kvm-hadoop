@@ -1,3 +1,12 @@
+---
+# VPN
+vpn_interface_prefix: tun
+
+# KVM
+kvm_interface_name: br10
+kvm_reset_vms: False
+
+# Hadoop
 hadoop_cluster_name: mycluster
 hadoop_reformat_namenode: True # All existing data (if any) will be deleted if set to True
 hadoop_hdfs_site: {"dfs.namenode.shared.edits.dir": "/mnt/gpfs0/hdfs-ha"}

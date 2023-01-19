@@ -4,6 +4,8 @@
     that:
       - openvpn_role is defined
       - openvpn_role is string
+      - vpn_interface_prefix is defined
+      - vpn_interface_prefix is string
       - openvpn_role in [ "client", "server" ]
     quiet: yes
 

@@ -2,7 +2,7 @@
 
 port 1194
 proto udp4
-dev tun
+dev {{ vpn_interface_prefix }}
 mode server
 tls-server
 duplicate-cn # Important so the same certificate can bind multiple users

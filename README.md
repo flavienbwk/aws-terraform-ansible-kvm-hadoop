@@ -4,7 +4,7 @@ A sample project to install Hadoop on KVM with Ansible on an AWS machine instanc
 
 This repo is for training purposes. If you use Cloud providers, only use KVM if you absolutely NEEDS TO. It asks for a more costly infrastructures, time-consuming instanciations, adds a layer of complexity already managed by Cloud providers (network, machines configuration) and as such is a burden to maintain. This architecture is only useful if you have big machines that must include strictly partitioned VMs.
 
-In this architecture, we need to setup a VPN server to connect all KVM guests so they can communicate. This will allow us to make Hadoop nodes communicate through the VPN network.
+In this architecture, we will setup a VPN server to make all KVM guests communicate. This will allow us to make Hadoop nodes communicate through the VPN network.
 
 ## KVM in the Cloud
 
@@ -19,7 +19,9 @@ As I had to ask a limit raise for my account to be able to instanciate this kind
 <details open>
 <summary>👉 Using AWS (price: 822.71$/month)</summary>
 
-_To be written..._
+Getting dedicated EC2 instances looks complicated in my own experience (I've contacted the customer service multiple times). You must get a significant bill during a significant amount of time to be eligible to ask having the rights to start this kind of instance.
+
+The Terraform plans present in this repository should work if you have rights to instanciate dedicated EC2 instances.
 
 </details>
 
@@ -70,14 +72,14 @@ _To be written..._
 1. Install the OpenVPN server
 
     ```bash
-    ANSIBLE_CONFIG=$(pwd)/ansible.cfg ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-server
+    ANSIBLE_CONFIG=$(pwd)/ansible.cfg ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-server
     ```
 
 2. Install KVM on each host and create guests
 
     ```bash
     ansible-galaxy collection install community.libvirt
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t kvm-install
+    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t kvm-install
     ```
 
 3. Connect all machines to communicate with each other (OpenVPN clients)
@@ -85,20 +87,20 @@ _To be written..._
     Connect and retrieve IP of each KVM guest.
 
     ```bash
-    ssh-add -D
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-client
+    eval `ssh-agent` && ssh-add -D
+    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t vpn-client
     ```
 
 4. Install Hadoop cluster
 
     ```bash
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hadoop-install
+    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hadoop
     ```
 
 5. Install HDFS fuse client
 
     ```bash
-    ansible-playbook -i inventories/machines.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hdfs-fuse-install
+    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hdfs-fuse-install
     ```
 
 ## Inspirations
