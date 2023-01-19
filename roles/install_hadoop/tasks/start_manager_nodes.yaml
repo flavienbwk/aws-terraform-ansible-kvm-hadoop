@@ -5,7 +5,7 @@
     path: "{{ hadoop_yarn_site['yarn.nodemanager.log-dirs'] | default(hadoop_yarn_site_defaults['yarn.nodemanager.log-dirs']) }}"
     state: directory
     mode: '774'
-  become: yes
+  become: True
   become_user: hdfs
 
 - name: create nodemanager local dir
@@ -14,7 +14,7 @@
     path: "{{ hadoop_yarn_site['yarn.nodemanager.local-dirs'] | default(hadoop_yarn_site_defaults['yarn.nodemanager.local-dirs']) }}"
     state: directory
     mode: '774'
-  become: yes
+  become: True
   become_user: hdfs
 
 - name: start manager nodes 1/2
@@ -37,7 +37,7 @@
       start_service: "{{ 'hadoop_managers' in group_names }}"
       hadoop_service_binary: yarn
       hadoop_service_name: proxyserver
-  become: yes
+  become: True
   become_user: yarn
 
 - name: start manager nodes 2/2
@@ -48,5 +48,5 @@
       start_service: "{{ 'hadoop_managers' in group_names }}"
       hadoop_service_binary: mapred
       hadoop_service_name: historyserver
-  become: yes
+  become: True
   become_user: mapred

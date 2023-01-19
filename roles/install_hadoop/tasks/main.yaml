@@ -6,6 +6,7 @@
       package:
         name:
           - wget
+          - sshfs
         state: present
       tags: hadoop, configureHadoop
 
@@ -70,6 +71,8 @@
       tags: hadoop, hadoopInstallSampleJARs
 
     - name: start namenodes
+      become: True
+      become_user: hdfs
       import_tasks: ./start_namenodes.yaml
       tags: hadoop, startHadoopServices, startNameNodes
 
@@ -77,6 +80,7 @@
       when: inventory_hostname == groups['hadoop_namenodes'][0]
       shell: "{{ hadoop_distro_home }}/bin/hdfs dfsadmin -safemode leave"
       become: True
+      become_user: hdfs
       tags: hadoop, startHadoopServices, startNameNodes
 
     - name: change owner of hdfs '/' to hdfs:hadoop

@@ -2,11 +2,18 @@
 - name: set hadoop package name from URL
   set_fact: hadoop_distro_pkg_name={{ hadoop_distro_url.split('/')[-1] }}
 
+- name: check if hadoop distro is already downloaded
+  stat:
+    path: "{{ hadoop_target_dir }}/{{ hadoop_distro_pkg_name }}"
+  register: hadoop_distro_pkg_stat
+  tags: hadoop, installHadoop
+
 - name: download hadoop distro    
   get_url:
     url: "{{ hadoop_distro_url }}"
     dest: "{{ hadoop_target_dir }}/{{ hadoop_distro_pkg_name }}"
   tags: hadoop, installHadoop
+  when: not hadoop_distro_pkg_stat.stat.exists
 
 - name: unpack hadoop distro
   unarchive:
@@ -16,6 +23,7 @@
     remote_src: yes
   register: archive_contents
   tags: hadoop, installHadoop
+  when: not hadoop_distro_pkg_stat.stat.exists
 
 - name: create link to current hadoop distro
   file:
@@ -23,3 +31,4 @@
     src: "{{ archive_contents.files[0] }}"
     state: link
   tags: hadoop, installHadoop
+  when: not hadoop_distro_pkg_stat.stat.exists

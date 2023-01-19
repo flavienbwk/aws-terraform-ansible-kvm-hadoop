@@ -1,11 +1,14 @@
 ---
+- name: ensures files/hadoop dir exists
+  file: 
+    path: "../files/hadoop"
+    state: directory
+
 - name: configure template files
   delegate_to: localhost
   template:
     src: ./templates/{{ item }}.j2
-    dest: "../../files/hadoop/{{ item }}"
-    owner: hdfs
-    group: hadoop
+    dest: "../files/hadoop/{{  inventory_hostname + '-' + item }}"
   loop:
     - core-site.xml
     - hdfs-site.xml
@@ -15,7 +18,7 @@
 
 - name: configure config files
   copy:
-    content: "{{ lookup('file', '../../files/hadoop/' + item) }}"
+    content: "{{ lookup('file', '../files/hadoop/' + inventory_hostname + '-' + item) }}"
     dest: "{{ hadoop_distro_home }}/etc/hadoop/{{ item }}"
     owner: hdfs
     group: hadoop

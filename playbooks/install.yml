@@ -213,9 +213,27 @@
       shell: ip -f inet addr show tun0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p'
       register: cmd_tun0_ip
       changed_when: False
-    - name: "Setting IP"
+    - name: Get user HOME directory
+      command: echo $HOME
+      register: user_home_cmd
+      changed_when: False
+    - name: Define user home directory
+      set_fact:
+        user_home: "{{ user_home_cmd.stdout }}"
+      changed_when: False
+    - name: Generate an OpenSSH keypair
+      openssh_keypair:
+        path: "{{ user_home }}/.ssh/id_rsa"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+    - name: "Get public key"
+      shell: cat "{{ user_home }}/.ssh/id_rsa.pub"
+      register: cmd_public_key
+      changed_when: False
+    - name: "Setting IP and public key"
       set_fact:
         vpn_ip: "{{ cmd_tun0_ip.stdout_lines[0] | trim }}"
+        public_key: "{{ cmd_public_key.stdout | trim }}"
 
 
 # Set Hadoop node role associated with VPN IP for each KVM guest
@@ -230,28 +248,44 @@
         name: "{{ item.name }}"
         ansible_host: "{{ item.vpn_ip }}"
         ansible_ssh_common_args: "-o ControlMaster=auto -o ControlPersist=60s -o ControlPath=~/.ansible/cp/{{ item.name }}-vpn-%h-%p-%r -o StrictHostKeyChecking=no -o ForwardAgent=yes -o ProxyCommand=\"ssh -T -q -o 'ForwardAgent yes' {{ hostvars[groups['vpnserver'][0]].ansible_user }}@{{ hostvars[groups['vpnserver'][0]].ansible_host}} 'ssh-add -t 60 && nc %h %p'\"" # Connect to guests through their respective hosts
+        public_key: "{{ item.public_key }}"
         groups: [ "{{ item.group }}" ]
       loop:
         - name: "{{ inventory_hostname }}-node-1"
           vpn_ip: "{{ hostvars[inventory_hostname + '-node-1'].vpn_ip }}"
+          public_key: "{{ hostvars[inventory_hostname + '-node-1'].public_key }}"
           group: "hadoop_namenodes"
         - name: "{{ inventory_hostname }}-node-2"
           vpn_ip: "{{ hostvars[inventory_hostname + '-node-2'].vpn_ip }}"
+          public_key: "{{ hostvars[inventory_hostname + '-node-2'].public_key }}"
           group: "hadoop_managers"
         - name: "{{ inventory_hostname }}-node-3"
           vpn_ip: "{{ hostvars[inventory_hostname + '-node-3'].vpn_ip }}"
+          public_key: "{{ hostvars[inventory_hostname + '-node-3'].public_key }}"
           group: "hadoop_datanodes"
         - name: "{{ inventory_hostname }}-node-4"
           vpn_ip: "{{ hostvars[inventory_hostname + '-node-4'].vpn_ip }}"
+          public_key: "{{ hostvars[inventory_hostname + '-node-4'].public_key }}"
           group: "hadoop_datanodes"
+# Making namenodes reachable with each other
+- hosts: "hadoop_namenodes"
+  gather_facts: False
+  tags: [ 'vpn-client',  'hadoop' ]
+  tasks:
+    - name: "Adding authorized SSH key for each namenode guest"
+      authorized_key:
+        user: "{{ hostvars[item].ansible_user }}"
+        state: present
+        key: "{{ hostvars[item].public_key }}"
+      loop: "{{ groups['hadoop_namenodes'] }}"
 
 
-# Create the hadoop cluster
+# Create the Hadoop cluster with HA mode on the KVM guests
 - hosts: "hadoop"
   gather_facts: True
   tags: hadoop-install
   vars:
     hadoop_cluster_name: mycluster
-    hadoop_reformat_namenode: True
+    hadoop_reformat_namenode: "{{ hadoop_reformat_namenode }}"
   roles:
     - install_hadoop
