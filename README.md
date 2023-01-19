@@ -1,37 +1,36 @@
 # aws-terraform-ansible-kvm-hadoop
 
-A sample project to install Hadoop on KVM with Ansible on an AWS machine instanciated by Terraform.
+A sample project to install Hadoop on KVM with Ansible, on AWS machines instanciated by Terraform.
 
-This repo is for training purposes. If you use Cloud providers, only use KVM if you absolutely NEEDS TO. It asks for a more costly infrastructures, time-consuming instanciations, adds a layer of complexity already managed by Cloud providers (network, machines configuration) and as such is a burden to maintain. This architecture is only useful if you have big machines that must include strictly partitioned VMs.
-
-In this architecture, we will setup a VPN server to make all KVM guests communicate. This will allow us to make Hadoop nodes communicate through the VPN network.
-
-Here is an example of what you can achieve with this bunch of playbooks :
+Here is an example of HDFS storage cluster running with this project.
 
 ![DFS storage types tab](./dfs_storage_type.png)
-
 ![Hadoop cluster live datanodes](./datanodes_alive.png)
 
-## KVM in the Cloud
+## A note about KVM in the Cloud
 
-Basically, you can't do it on classic AWS [unless you have a dedicated instance](https://aws.amazon.com/blogs/aws/new-amazon-ec2-bare-metal-instances-with-direct-access-to-hardware). You are recommended to do it on a [Dedicated EC2 instance](https://aws.amazon.com/ec2/pricing/dedicated-instances).
+Basically, you can't work with KVM on a classic AWS instance [unless you have a dedicated one](https://aws.amazon.com/blogs/aws/new-amazon-ec2-bare-metal-instances-with-direct-access-to-hardware). You must choose a `*.metal` instance type (:moneybag:).
 
-As I had to ask a limit raise for my account to be able to instanciate this kind of instance, I used [Scaleway Elastic Metal](https://www.scaleway.com/en/elastic-metal/) in the meantime.
+This repo is for educational purposes. If you use Cloud providers, only use KVM if you absolutely NEEDS TO. It asks for a more costly infrastructures, time-consuming instanciations, adds a layer of complexity already managed by Cloud providers (network, machine configuration) and as such is a burden to maintain. This architecture is only useful if you have big machines that must include strictly partitioned VMs.
+
+As [Scaleway Elastic Metal](https://www.scaleway.com/en/elastic-metal/) machines are way less expensive than AWS, you will find Terraform plans and instructions for both AWS and Scaleway.
 
 ## 1. Instanciate the infrastructure
 
 ![Architecture schema](./schema.jpg)
 
+In this architecture, we will setup a VPN server to make KVM guests communicate. After setting up and connecting Hadoop nodes through the VPN network, a client will try to mount an HDFS space as a FUSE to be used as a file system.
+
+The ResourceManager described here will get the roles of ResourceManager, NodeManager and MapReduce Job History server.
+
 <details open>
-<summary>👉 Using AWS (price: 822.71$/month)</summary>
+<summary>👉 Using AWS (price: 8454.53$/month)</summary>
 
-Getting dedicated EC2 instances looks complicated in my own experience (I've contacted the customer service multiple times). You must get a significant bill during a significant amount of time to be eligible to ask having the rights to start this kind of instance.
-
-The Terraform plans present in this repository should work if you have rights to instanciate dedicated EC2 instances.
+:warning: :moneybag: Please be very careful running the Terraform plans as prices for dedicated (metal) instances are **very high**. The indicated cost is about the least expensive instance found in the North Virginia region.
 
 </details>
 
-<details open>
+<details close>
 <summary>👉 Using Scaleway (price: 303.37$/month)</summary>
 
 1. Go to your Scaleway account > [Credentials](https://console.scaleway.com/project/credentials) and create a new API key `terraform-ansible-kvm-hadoop`
@@ -57,6 +56,8 @@ The Terraform plans present in this repository should work if you have rights to
     ```bash
     terraform apply
     ```
+
+    > To terminate instances and avoid unintended spendings, use `terraform destroy`
 
 5. Edit values of our Ansible inventory file from Terraform output values
 
