@@ -1,0 +1,5 @@
+---
+# Can be specified as inventory attributes
+hdfs_mount_path: "/mnt/hdfs"
+hdfs_namenode_ip: "20.20.20.14"
+hdfs_namenode_port: "8020"

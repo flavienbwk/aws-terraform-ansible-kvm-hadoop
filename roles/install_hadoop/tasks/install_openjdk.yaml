@@ -12,7 +12,7 @@
     url: "{{ jre_url }}"
     dest: "{{ jre_target_dir }}/{{ jre_pkg_name }}"
   tags: jre
- 
+
 - name: unpack JRE
   unarchive:
     src: "{{ jre_target_dir }}/{{ jre_url.split('/')[-1] }}"
@@ -28,4 +28,3 @@
     src: "{{ archive_contents.files[0] }}"
     state: link
   tags: jre
-  

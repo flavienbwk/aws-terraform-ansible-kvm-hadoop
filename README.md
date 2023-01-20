@@ -9,7 +9,7 @@ Here is an example of HDFS storage cluster running with this project.
 
 ## A note about KVM in the Cloud
 
-Basically, you can't work with KVM on a classic AWS instance [unless you have a dedicated one](https://aws.amazon.com/blogs/aws/new-amazon-ec2-bare-metal-instances-with-direct-access-to-hardware). You must choose a `*.metal` instance type (:moneybag:).
+Basically, you can't work with KVM on a classic AWS EC2 instance [unless you have a baremetal one](https://aws.amazon.com/blogs/aws/new-amazon-ec2-bare-metal-instances-with-direct-access-to-hardware). You must choose a `*.metal` instance type (:moneybag:).
 
 This repo is for educational purposes. If you use Cloud providers, only use KVM if you absolutely NEEDS TO. It asks for a more costly infrastructures, time-consuming instanciations, adds a layer of complexity already managed by Cloud providers (network, machine configuration) and as such is a burden to maintain. This architecture is only useful if you have big machines that must include strictly partitioned VMs.
 
@@ -19,14 +19,14 @@ As [Scaleway Elastic Metal](https://www.scaleway.com/en/elastic-metal/) machines
 
 ![Architecture schema](./schema.jpg)
 
-In this architecture, we will setup a VPN server to make KVM guests communicate. After setting up and connecting Hadoop nodes through the VPN network, a client will try to mount an HDFS space as a FUSE to be used as a file system.
+In this architecture, we will setup a VPN server to get KVM guests to communicate. After setting up and connecting Hadoop nodes through the VPN network, a client will try to [mount an HDFS space as a FUSE](https://sleeplessbeastie.eu/2021/09/13/how-to-mount-hdfs-as-a-local-file-system/) to be used as a file system.
 
 The ResourceManager described here will get the roles of ResourceManager, NodeManager and MapReduce Job History server.
 
 <details open>
 <summary>👉 Using AWS (price: 8454.53$/month)</summary>
 
-:warning: :moneybag: Please be very careful running the Terraform plans as prices for dedicated (metal) instances are **very high**. The indicated cost is about the least expensive instance found in the North Virginia region.
+:warning: :moneybag: Please be very careful running the Terraform plans as prices for baremetal instances are **very high**. The indicated cost is about the least expensive instance found in the North Virginia region.
 
 </details>
 
@@ -104,10 +104,10 @@ The ResourceManager described here will get the roles of ResourceManager, NodeMa
     ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hadoop
     ```
 
-5. Install HDFS fuse client
+5. Install HDFS FUSE client
 
     ```bash
-    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hdfs-fuse-install
+    ansible-playbook -i inventories/global.ini ./playbooks/install.yml --extra-vars @./vars/all.yml -t hdfs-fuse-clients
     ```
 
 ## Inspirations

@@ -1,0 +1,12 @@
+hdfs:
+  server: http://hdfs_hostname:50070
+  hdfs_user: "hdfs"
+  hdfs_group: "hadoop"
+  mount_root: "/"
+  kerberos: False
+mount:
+  dest_dir: {{ hdfs_mount_path }}
+  extra:
+    allow_root: True
+    allow_other: True 
+    nothreads: False

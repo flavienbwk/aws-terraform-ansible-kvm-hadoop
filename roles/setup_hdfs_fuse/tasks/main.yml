@@ -1,0 +1,78 @@
+---
+- name: Get user HOME directory
+  command: echo $HOME
+  register: user_home_cmd
+  changed_when: False
+
+- name: Define user home directory
+  set_fact:
+    user_home: "{{ user_home_cmd.stdout }}"
+    build_dir: "{{ user_home_cmd.stdout }}/.hadoop-build"
+  changed_when: False
+
+- name: "Check if the native-hdfs-fuse command is available"
+  shell: which native-hdfs-fuse
+  register: native_hdfs_fuse_cmd
+  failed_when: False
+
+- name: install needed packages
+  when: native_hdfs_fuse_cmd.rc != 0
+  package:
+    name:
+      - git
+      - wget
+      - protobuf-c-compiler
+      - libprotobuf-dev
+      - uncrustify
+      - cmake
+      - libfuse-dev
+      - pkgconf
+      - libprotobuf-c-dev
+    state: present
+
+- name: "Prepare build directory"
+  when: native_hdfs_fuse_cmd.rc != 0
+  file:
+    path: "{{ build_dir }}"
+    mode: u=rwx,g=rwx,o=r
+    recurse: yes
+    state: directory
+
+- name: "Making sure HDFS FUSE library is not cloned"
+  when: native_hdfs_fuse_cmd.rc != 0
+  file:
+    path: "{{ build_dir }}/native-hdfs-fuse"
+    state: absent
+
+- name: "Clone HDFS FUSE library"
+  when: native_hdfs_fuse_cmd.rc != 0
+  shell: git clone "{{ hadoop_git_repo_url }}"
+  args:
+    chdir: "{{ build_dir }}"
+
+- name: "Compile and install HDFS FUSE library"
+  when: native_hdfs_fuse_cmd.rc != 0
+  shell: make && make install
+  args:
+    chdir: "{{ build_dir }}/native-hdfs-fuse"
+
+- name: "Unmount directory"
+  shell: fusermount -uz "{{ hdfs_mount_path }}"
+  failed_when: False
+
+- name: "Check if HDFS mount path exists"
+  stat:
+    path: "{{ hdfs_mount_path }}"
+  register: hdfs_mount_path_stat
+
+- name: "Prepare FUSE mount directory"
+  when: not hdfs_mount_path_stat.stat.exists
+  file:
+    path: "{{ hdfs_mount_path }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: "Mount directory"
+  shell: native-hdfs-fuse "{{ hdfs_namenode_ip }}" "{{ hdfs_namenode_port }}" "{{ hdfs_mount_path }}"
+

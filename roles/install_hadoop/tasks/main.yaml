@@ -1,6 +1,5 @@
 ---
 - name: deploy Hadoop
-  when: "'hadoop' in group_names"
   block:
     - name: install needed packages
       package:
@@ -51,6 +50,14 @@
     - name: Configure config files
       when: "'hadoop' in group_names"
       import_tasks: ./configure_config_files.yaml
+      tags: hadoop, configureHadoop
+
+    - name: set JAVA_HOME in hadoop-env.sh
+      lineinfile:
+        path: "{{ hadoop_distro_home }}/etc/hadoop/hadoop-env.sh"
+        line: export JAVA_HOME={{ hadoop_target_dir }}/jre/current
+        insertafter: "# export JAVA_HOME="
+        regexp: "^export JAVA_HOME=.*$"
       tags: hadoop, configureHadoop
 
     - name: configure Hadoop
@@ -106,8 +113,7 @@
       tags: hadoop, startHadoopServices, startDataNodes
 
 
-- name: Installing Hadoop CLI utils
-  when: "'hadoop' in group_names"
+- name: Setup Hadoop CLI utils
   tags: installUtils
   block:
     - name: Get user HOME directory
@@ -128,5 +134,5 @@
     - name: Linking utils binaries
       lineinfile:
         dest: "{{ user_home }}/.bashrc"
-        line: 'export PATH=$PATH:/opt/hadoop/current/bin'
+        line: 'export PATH=$PATH:/opt/hadoop/current/bin:/opt/hadoop/jre/current/bin'
       when: test_bin_expt_line.stdout == "0"

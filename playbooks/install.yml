@@ -145,7 +145,7 @@
 # Reaching KVM guests through their respective host
 - hosts: "kvm_hosts"
   gather_facts: False
-  tags: [ 'vpn-client',  'hadoop' ]
+  tags: [ 'vpn-client', 'hadoop', 'hdfs-fuse-clients' ]
   serial: 1 # Making this playbook NOT run parallely https://stackoverflow.com/a/42110297/4958081
   tasks:
     - name: "Building the VPN guests inventory variables"
@@ -207,7 +207,7 @@
 # Retrieve VPN IPs of each KVM guest
 - hosts: "kvm_guests"
   gather_facts: False
-  tags: hadoop
+  tags: [ 'hadoop', 'hdfs-fuse-clients' ]
   tasks:
     - name: "Retrieving VPN IPs"
       shell: ip -f inet addr show tun0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p'
@@ -241,7 +241,7 @@
 - hosts: "kvm_hosts"
   gather_facts: False
   serial: 1
-  tags: [ 'vpn-client',  'hadoop' ]
+  tags: [ 'hadoop', 'hdfs-fuse-clients' ]
   tasks:
     - name: "Processing {{ item.group }} : {{ item.name }}"
       add_host:
@@ -270,7 +270,7 @@
 # Making namenodes reachable with each other
 - hosts: "hadoop_namenodes"
   gather_facts: False
-  tags: [ 'vpn-client',  'hadoop' ]
+  tags: [ 'vpn-client', 'hadoop', 'hdfs-fuse-clients' ]
   tasks:
     - name: "Adding authorized SSH key for each namenode guest"
       authorized_key:
@@ -289,3 +289,20 @@
     hadoop_reformat_namenode: "{{ hadoop_reformat_namenode }}"
   roles:
     - install_hadoop
+
+
+# Install HDFS FUSE on hdfs_client
+- hosts: "hdfs_fuse_clients"
+  gather_facts: false
+  tags: hdfs-fuse-clients
+  tasks:
+    - name: "Set HDFS mount path"
+      set_fact:
+        hdfs_mount_path_eval: "{{ hostvars[inventory_hostname].hdfs_mount_path if 'hdfs_mount_path' in hostvars[inventory_hostname] else '/mnt/hdfs' }}"
+    - name: "Install HDFS FUSE"
+      vars:
+        hdfs_mount_path: "{{ hdfs_mount_path_eval }}"
+        hdfs_namenode_ip: "{{ hostvars[groups['hadoop_namenodes'][0]].ansible_host }}"
+        hdfs_namenode_port: "8020"
+      include_role:
+        name: setup_hdfs_fuse
