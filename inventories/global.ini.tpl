@@ -2,21 +2,22 @@
 127.0.0.1 ansible_connection=local
 
 [all:vars]
-ansible_user=ubuntu
 ansible_python_interpreter=/usr/bin/python3
 
 [machines]
-machine-1 ansible_host=xxx.xxx.xxx.001
-machine-2 ansible_host=xxx.xxx.xxx.002
-machine-3 ansible_host=xxx.xxx.xxx.003
-openvpn-server ansible_user=root ansible_host=xxx.xxx.xxx.100
+machine-1 ansible_user=${machine_1_user} ansible_host=${machine_1_ip}
+machine-2 ansible_user=${machine_2_user} ansible_host=${machine_2_ip}
+machine-3 ansible_user=${machine_3_user} ansible_host=${machine_3_ip}
+openvpn-server ansible_user=${vpn_server_user} ansible_host=${vpn_server_ip}
+hdfs_client ansible_user=${hdfs_client_user} ansible_host=${hdfs_client_ip}
 
 [kvm_hosts]
 machine-1
 machine-2
 machine-3
 
-[vpnserver] # One only
+[vpnserver]
+# One only
 openvpn-server
 
 [hdfs_fuse_clients]

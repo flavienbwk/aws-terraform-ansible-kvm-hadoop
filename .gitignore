@@ -1,5 +1,10 @@
 .vscode
+
 files/*
 !files/.gitkeep
 !files/hadoop/.gitkeep
 !files/vpnserver/.gitkeep
+
+.terraform
+terraform.tfstate*
+.terraform.tfstate.lock.info
