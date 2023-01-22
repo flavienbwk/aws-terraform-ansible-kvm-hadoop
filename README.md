@@ -1,6 +1,6 @@
 # aws-terraform-ansible-kvm-hadoop
 
-A sample project to install Hadoop on KVM with Ansible, on AWS machines instantiated by Terraform.
+Install and configure Hadoop on KVM machines with Ansible, bootstrapped by Terraform on AWS.
 
 Here is an example of HDFS storage cluster running with this project.
 
