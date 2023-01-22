@@ -1,4 +1,4 @@
-# Instanciate Scaleway servers for the aws-terraform-ansible-kvm-hadoop project.
+# instantiate Scaleway servers for the aws-terraform-ansible-kvm-hadoop project.
 # "Test" version specificity is about using only instances instead of baremetal
 # to validate this Terraform script without having to pay for baremetal servers.
 # GitHub : https://github.com/flavienbwk/aws-terraform-ansible-kvm-hadoop
@@ -46,7 +46,6 @@ data "scaleway_baremetal_offer" "machine_1_offer" {
 
 # --- MACHINES DEFINITION ---
 
-
 resource "scaleway_instance_ip" "machine_1_ip" {}
 resource "scaleway_instance_server" "machine_1" {
   name       = "machine-1"
@@ -85,7 +84,7 @@ resource "scaleway_instance_server" "machine_3" {
 
 resource "scaleway_instance_ip" "vpn_server_ip" {}
 resource "scaleway_instance_server" "vpn_server" {
-  name       = "vpn_server"
+  name       = "vpn-server"
   type       = "DEV1-S"
   image      = "ubuntu_jammy"
   ip_id      = scaleway_instance_ip.vpn_server_ip.id
@@ -97,7 +96,7 @@ resource "scaleway_instance_server" "vpn_server" {
 
 resource "scaleway_instance_ip" "hdfs_client_ip" {}
 resource "scaleway_instance_server" "hdfs_client" {
-  name       = "hdfs_client"
+  name       = "hdfs-client"
   type       = "DEV1-S"
   image      = "ubuntu_jammy"
   ip_id      = scaleway_instance_ip.hdfs_client_ip.id
@@ -115,11 +114,11 @@ resource "local_file" "ansible_inventory" {
   filename = "../../inventories/global.ini"
   content = templatefile("../../inventories/global.ini.tpl", {
     machine_1_ip = scaleway_instance_server.machine_1.public_ip
-    machine_1_user = "ubuntu"
+    machine_1_user = "root"
     machine_2_ip = scaleway_instance_server.machine_2.public_ip
-    machine_2_user = "ubuntu"
+    machine_2_user = "root"
     machine_3_ip = scaleway_instance_server.machine_3.public_ip
-    machine_3_user = "ubuntu"
+    machine_3_user = "root"
     vpn_server_ip = scaleway_instance_server.vpn_server.public_ip
     vpn_server_user = "root"
     hdfs_client_ip = scaleway_instance_server.hdfs_client.public_ip

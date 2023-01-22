@@ -1,4 +1,5 @@
 # instantiate AWS servers for the aws-terraform-ansible-kvm-hadoop project.
+# "Test" version specificity is about using only instances instead of baremetal
 # to validate this Terraform script without having to pay for baremetal servers.
 # GitHub : https://github.com/flavienbwk/aws-terraform-ansible-kvm-hadoop
 
@@ -21,7 +22,7 @@ provider "aws" {
 
 resource "aws_instance" "machine_1" {
   ami                         = "ami-03e08697c325f02ab"
-  instance_type               = "c5n.metal"
+  instance_type               = "t2.micro"
   security_groups             = [aws_security_group.takh_sg.id]
   associate_public_ip_address = true
 
@@ -43,7 +44,7 @@ resource "aws_instance" "machine_1" {
 
 resource "aws_instance" "machine_2" {
   ami                         = "ami-03e08697c325f02ab"
-  instance_type               = "c5n.metal"
+  instance_type               = "t2.micro"
   security_groups             = [aws_security_group.takh_sg.id]
   associate_public_ip_address = true
 
@@ -65,7 +66,7 @@ resource "aws_instance" "machine_2" {
 
 resource "aws_instance" "machine_3" {
   ami                         = "ami-03e08697c325f02ab"
-  instance_type               = "c5n.metal"
+  instance_type               = "t2.micro"
   security_groups             = [aws_security_group.takh_sg.id]
   associate_public_ip_address = true
 
@@ -87,7 +88,7 @@ resource "aws_instance" "machine_3" {
 
 resource "aws_instance" "vpn_server" {
   ami                         = "ami-03e08697c325f02ab"
-  instance_type               = "t3.small"
+  instance_type               = "t2.micro"
   security_groups             = [aws_security_group.takh_sg.id]
   associate_public_ip_address = true
 
@@ -109,7 +110,7 @@ resource "aws_instance" "vpn_server" {
 
 resource "aws_instance" "hdfs_client" {
   ami                         = "ami-03e08697c325f02ab"
-  instance_type               = "t3.small"
+  instance_type               = "t2.micro"
   security_groups             = [aws_security_group.takh_sg.id]
   associate_public_ip_address = true
 
@@ -130,7 +131,6 @@ resource "aws_instance" "hdfs_client" {
 }
 
 # ---/ END MACHINES DEFINITION ---
-
 
 # Create the global.ini file from IPs of our instances
 resource "local_file" "ansible_inventory" {
@@ -155,23 +155,23 @@ module "pricing" {
 
   resources = {
     "aws_instance.machine_1" = {
-      instanceType = "c5n.metal"
+      instanceType = "t2.micro"
       location     = "us-east-1"
     }
     "aws_instance.machine_2" = {
-      instanceType = "c5n.metal"
+      instanceType = "t2.micro"
       location     = "us-east-1"
     }
     "aws_instance.machine_3" = {
-      instanceType = "c5n.metal"
+      instanceType = "t2.micro"
       location     = "us-east-1"
     }
     "aws_instance.vpn_server" = {
-      instanceType = "t3.small"
+      instanceType = "t2.micro"
       location     = "us-east-1"
     }
     "aws_instance.hdfs_client" = {
-      instanceType = "t3.small"
+      instanceType = "t2.micro"
       location     = "us-east-1"
     }
   }

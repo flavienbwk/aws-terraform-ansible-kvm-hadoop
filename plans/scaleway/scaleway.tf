@@ -1,4 +1,4 @@
-# Instanciate Scaleway servers for the aws-terraform-ansible-kvm-hadoop project
+# instantiate Scaleway servers for the aws-terraform-ansible-kvm-hadoop project
 # GitHub : https://github.com/flavienbwk/aws-terraform-ansible-kvm-hadoop
 
 variable "SCW_PROJECT_ID" {
@@ -76,7 +76,7 @@ resource "scaleway_baremetal_server" "machine_3" {
 
 resource "scaleway_instance_ip" "vpn_server_ip" {}
 resource "scaleway_instance_server" "vpn_server" {
-  name       = "vpn_server"
+  name       = "vpn-server"
   type       = "DEV1-L"
   image      = "ubuntu_jammy"
   ip_id      = scaleway_instance_ip.vpn_server_ip.id
@@ -88,7 +88,7 @@ resource "scaleway_instance_server" "vpn_server" {
 
 resource "scaleway_instance_ip" "hdfs_client_ip" {}
 resource "scaleway_instance_server" "hdfs_client" {
-  name       = "hdfs_client"
+  name       = "hdfs-client"
   type       = "DEV1-M"
   image      = "ubuntu_jammy"
   ip_id      = scaleway_instance_ip.hdfs_client_ip.id

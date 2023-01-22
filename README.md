@@ -1,6 +1,6 @@
 # aws-terraform-ansible-kvm-hadoop
 
-A sample project to install Hadoop on KVM with Ansible, on AWS machines instanciated by Terraform.
+A sample project to install Hadoop on KVM with Ansible, on AWS machines instantiated by Terraform.
 
 Here is an example of HDFS storage cluster running with this project.
 
@@ -15,20 +15,20 @@ This repo is for educational purposes. If you use Cloud providers, only use KVM 
 
 As [Scaleway Elastic Metal](https://www.scaleway.com/en/elastic-metal/) machines are way less expensive than AWS, you will find Terraform plans and instructions for both AWS and Scaleway.
 
-## 1. Instanciate the infrastructure
+## 1. Instantiate the infrastructure
 
 ![Architecture schema](./schema.jpg)
 
-In this architecture, we will setup a VPN server to get KVM guests to communicate. After setting up and connecting Hadoop nodes through the VPN network, a client will try to [mount an HDFS space as a FUSE](https://sleeplessbeastie.eu/2021/09/13/how-to-mount-hdfs-as-a-local-file-system/) to be used as a file system.
+In this architecture, we will setup a VPN server to get KVM guests to communicate. After setting up and connecting Hadoop nodes through the VPN network, a client will try to [mount an HDFS space as a FUSE](https://github.com/flavienbwk/native-hdfs-fuse) to be used as a file system.
 
 The ResourceManager described here will get the roles of ResourceManager, NodeManager and MapReduce Job History server.
 
-<details open>
-<summary>👉 Using AWS (price: 8454.53$/month)</summary>
+<details close>
+<summary>👉 Using AWS (price: 8545.09$/month)</summary>
 
 :warning: :moneybag: Please be very careful running the Terraform plans as prices for baremetal instances are **very high**. The indicated cost is about the least expensive instance found in the North Virginia region.
 
-1. Retrieve your AWS credentials and set them inside `~/.aws/credentials` :
+1. [Create AWS credentials](https://us-east-1.console.aws.amazon.com/iamv2/home?region=us-east-1#/security_credentials) and set them inside the `~/.aws/credentials` file :
 
     ```bash
     # ~/.aws/credentials
@@ -36,6 +36,27 @@ The ResourceManager described here will get the roles of ResourceManager, NodeMa
     aws_access_key_id = my-access-key
     aws_secret_access_key = my-secret-key
     ```
+
+2. [Import your public key](https://us-east-1.console.aws.amazon.com/ec2/v2/home?region=us-east-1#ImportKeyPair:) with name `main` in EC2's Key Pairs menu
+
+3. Make sure there's no error by running `init` and `plan` commands
+
+    Make sure to have an SSH key which description is `main` [in your Scaleway account](https://console.scaleway.com/project/credentials).
+
+    ```bash
+    terraform -chdir=./plans/aws init
+    terraform -chdir=./plans/aws plan
+    ```
+
+4. Execute the plan
+
+    This command will generate our `global.ini` inventory file :
+
+    ```bash
+    terraform -chdir=./plans/aws apply
+    ```
+
+    > To terminate instances and avoid unintended spendings, use `terraform destroy`
 
 </details>
 
@@ -47,7 +68,7 @@ The ResourceManager described here will get the roles of ResourceManager, NodeMa
 2. Run the following `export` commands replacing values by yours
 
     ```bash
-    export TF_VAR_SCW_PROJECT_ID="my-project-id" # can be found in console.scaleway.com/project/settings
+    export TF_VAR_SCW_PROJECT_ID="my-project-id" # Find this in console.scaleway.com/project/settings
     export TF_VAR_SCW_ACCESS_KEY="my-access-key"
     export TF_VAR_SCW_SECRET_KEY="my-secret-key"
     ```
@@ -115,7 +136,7 @@ The ResourceManager described here will get the roles of ResourceManager, NodeMa
 
 ## Inspirations
 
-Great repos that helped building this one :
+Great repos that helped build this one :
 
 - OpenVPN : [robertdebock/ansible-role-openvpn](https://github.com/robertdebock/ansible-role-openvpn)
 - Hadoop : [andiveloper/ansible-hadoop](https://github.com/andiveloper/ansible-hadoop)
