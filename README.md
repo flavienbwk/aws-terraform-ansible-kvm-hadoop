@@ -11,7 +11,7 @@ Here is an example of HDFS storage cluster running with this project.
 
 Basically, you can't work with KVM on a classic AWS EC2 instance [unless you have a baremetal one](https://aws.amazon.com/blogs/aws/new-amazon-ec2-bare-metal-instances-with-direct-access-to-hardware). You must choose a `*.metal` instance type (:moneybag:).
 
-This repo is for educational purposes. If you use Cloud providers, only use KVM if you absolutely NEEDS TO. It asks for a more costly infrastructure, time-consuming instanciations, adds a layer of complexity already managed by Cloud providers (network, machine configuration) and as such is a burden to maintain. This architecture is only useful if you have big machines that must include strictly partitioned VMs.
+This repo is for educational purposes. If you use Cloud providers, only use KVM if you absolutely NEED TO. It asks for a more costly infrastructure, time-consuming instanciations, adds a layer of complexity already managed by Cloud providers (network, machine configuration) and as such is a burden to maintain. This architecture is only useful if you have big machines that must include strictly partitioned VMs.
 
 As [Scaleway Elastic Metal](https://www.scaleway.com/en/elastic-metal/) machines are way less expensive than AWS, you will find Terraform plans and instructions for both AWS and Scaleway.
 
